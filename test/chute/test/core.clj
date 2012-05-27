@@ -58,14 +58,18 @@
   (subscribe filtered (fn [e] (def changed-second e)))
   (is (not changed-first))
   (is (not changed-second))
-  ;(is (= 0 calls))
+  (is (= 0 calls))
   (basic-handler :foo)
   (is (= :foo changed-first))
   (is (= :foo changed-second))
+  ; maybe do this in the future
   ;(is (= 1 calls))
   (basic-handler :bar)
   (is (= :bar changed-first))
-  (is (= :bar changed-second)))
+  (is (= :bar changed-second))
+  ; maybe do this in the future
+  ;(is (= 2 calls))
+  )
 
 (deftest filter-some-test
   (def changed-first false)

@@ -152,7 +152,8 @@
   basic-handler)
 (defn set-handler [f]
   (def basic-handler f))
-; appender :: handler -> handler -> handler
+; appender :: orig -> new -> combined
+; appender :: (e -> ()) -> (e -> ()) -> combined
 (defn append-handler [f]
   (let [old (get-handler)]
     (def basic-handler (fn [e]
@@ -178,14 +179,32 @@
 
 ; fiter :: M appender<a> -> predicate -> M appender<b>
 ; fiter :: M (handler -> ()) -> predicate -> M (handler-with-pred -> ())
-; add-pred :: handler -> pred -> handler-with-pred
 (defn myfilter [m pred]
   (bind m (fn [appender]
             (result (fn [handler]
                       (appender (fn [e]
                                   (if (pred e)
                                     (handler e)))))))))
-;(defn myfilter [m pred]
-;  (bind m (fn [appender]
-;            (result (fn [handler]
-;                      (appender handler))))))
+
+(defn- set-timeout [func amount]
+  (.start (Thread. (fn []
+                     (Thread/sleep amount)
+                     (func)))))
+
+; delay :: M apender -> amount -> M appender
+(defn sleep [m amount]
+  (bind m (fn [appender]
+            (result (fn [handler]
+                      (appender (fn [e]
+                                  (set-timeout #(handler e) amount))))))))
+;(def o (from-basic-event append-handler))
+;(subscribe o #(print "subscribed " % "\n"))
+;(basic-handler :foo)
+;(def delayed (sleep o 1000))
+;(subscribe delayed #(print "delayed " % "\n"))
+;(basic-handler :foo)
+;(def small-delay (sleep o 500))
+;(def double-delay (sleep delayed 500))
+;(subscribe small-delay #(println "small-delay " %))
+;(subscribe double-delay #(println "double-delay " %))
+;(basic-handler :foo) (Thread/sleep 2500)
