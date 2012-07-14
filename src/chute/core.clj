@@ -1,69 +1,5 @@
-; TODO
-; set up git repo
-; figure out the right way to use cont-m, don't use (:m-bind cont-m), it's bad to use internal functionality
-; find an overview of the Rx.net api (without going through their legal crap)
-; take a look at FrTime (or whatever that scheme library was called) and compare it to Rx.net.
-; consider making (observable) return a function that can just be called with an event. We might need a different function that does what observable does now to do this
-
 (ns chute.core
   (:use [clojure.algo.monads]))
-
-(defn mf-a [x]
-  (println "start mf-a; x = " x)
-  (fn [c]
-    (println "inside mf-a; c = " c)
-    (c (inc x))))
-
-(defn mf-b [x]
-  (println "start mf-b; x = " x)
-  (fn [c]
-    (println "inside mf-b; c = " c)
-    (c (* 2 x))))
-
-(defn mf-c [x]
-  (println "start mf-c; x = " x)
-  (fn [c]
-    (println "inside mf-c; c = " c)
-    (c (dec x))))
-
-;(((domonad cont-m
-;           [a mf-a]
-;           a) 5) identity)
-
-;(((fn [x] (domonad cont-m
-;                   [a (mf-a x)
-;                    b (mf-b a)]
-;                   b)) 21) identity)
-
-(defn observable []
-  ;(m-result (fn [event] nil)))
-  ((:m-result cont-m) (fn [event] nil)))
-
-(defn event [m e]
-  ((m identity) e))
-
-(defn subscribe [m observer]
-  (let [f (fn [value]
-            (fn [cont]
-              (fn [e]
-                (observer e)
-                ((cont value) e))))]
-    ((:m-bind cont-m) m f)))
-
-; FIXME
-;(defn keep [m pred]
-;  (let [f (fn [value]
-;            (fn [cont]
-;              (fn [e]
-;                (if (pred e)
-;                  ((cont value) e)))))]
-;    ((:m-bind cont-m) m f)))
-
-(defn subscribe [observable observer]
-  ((:m-bind observable) observer))
-
-(defn on-event [observer event]
-  ((:m-result observer) event))
 
 ;(defprotocol Observable
 ;  (subscribe [observer]))
@@ -131,21 +67,6 @@
 (def bind (with-monad cont-m m-bind))
 (def result (with-monad cont-m m-result))
 
-(defn subscribe [t2n] (fn [e] (bind (result e) (fn [x] (t2n x) (result x)))))
-(defn subscribe [t2n] (fn [m] (bind m (fn [x] (t2n x) (result x)))))
-
-(def a (subscribe (fn [e] (print "from a" e "\n"))))
-((a (result 5)) identity)
-(def b (subscribe (fn [e] (print "from b" e "\n"))))
-((b (a (result 5))) identity)
-
-(defn observable
-  ([] (observable {}))
-  ([overrides] (merge cont-m
-                      {:subscribe (fn [m t2n] (bind m (fn [t] (t2n t) ((:m-result cont-m) t))))
-                       :event (fn [e] )}
-                      overrides)))
-
 ; this is the function that would be assigned to something like onclick
 (def basic-handler identity)
 (defn get-handler []
@@ -159,9 +80,6 @@
     (def basic-handler (fn [e]
                    (old e)
                    (f e)))))
-
-(defn from-basic-event [] (result (get-handler)))
-;(defn subscribe [t2n] (fn [m] (bind m (fn [x] (t2n x) (result x)))))
 
 ; from-basic-event
 ; takes in a function to add a new handler to something
@@ -198,7 +116,7 @@
                       (appender (fn [e]
                                   (set-timeout #(handler e) amount))))))))
 ;(def o (from-basic-event append-handler))
-;(subscribe o #(print "subscribed " % "\n"))
+;(subscribe o #(println "subscribed " %))
 ;(basic-handler :foo)
 ;(def delayed (sleep o 1000))
 ;(subscribe delayed #(print "delayed " % "\n"))

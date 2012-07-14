@@ -11,9 +11,8 @@
 
 (deftest subscribe-test
   (def changed false)
-  (print "test print")
   (let [subj (subscribe (from-basic-event append-handler)
-                        (fn [e] (print "CHANGED") (def changed e)))]
+                        (fn [e] (def changed e)))]
     (is (not changed))
     (basic-handler :foo)
     (is (= :foo changed))
@@ -93,38 +92,3 @@
   (is (= :foo changed-first))
   (is (= :bar changed-second)))
 
-
-;(deftest basic
-;  ; observable returns nothing when not being watched
-;  (is (nil? (((observable) identity) :foo)))
-;  (is (nil? (event (observable) :foo))))
-;
-;(deftest subscribe-test
-;  (def changed false)
-;  (let [subj (subscribe (observable)
-;                        (fn [e] (def changed e)))]
-;    (is (= false changed))
-;    (event subj :foo)
-;    (is (= :foo changed))
-;    (event subj :bar)
-;    (is (= :bar changed))))
-;
-;(deftest multiple-subscribers-test
-;  (def changed-first false)
-;  (def changed-second false)
-;  (def subj (-> (observable)
-;              (subscribe (fn [e] (def changed-first e)))
-;              (subscribe (fn [e] (def changed-second e)))))
-;  (is (not changed-first))
-;  (is (not changed-second))
-;  (event subj :foo)
-;  (is (= :foo changed-first))
-;  (is (= :foo changed-second))
-;  (event subj :bar)
-;  (is (= :bar changed-first))
-;  (is (= :bar changed-second)))
-;
-;(deftest select-test
-;  (def changed false)
-;  (def calls 0)
-;
