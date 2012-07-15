@@ -2,93 +2,107 @@
   (:use [chute.core])
   (:use [clojure.test]))
 
-(deftest basic
-  (def changed false)
-  ; observable returns nothing when not being watched
-  (let [observable (from-basic-event append-handler)]
-    (basic-handler :foo)
-    (is (not changed))))
-
 (deftest subscribe-test
-  (def changed false)
-  (let [subj (subscribe (from-basic-event append-handler)
-                        (fn [e] (def changed e)))]
-    (is (not changed))
-    (basic-handler :foo)
-    (is (= :foo changed))
-    (basic-handler :bar)
-    (is (= :bar changed))))
+  (let [handler (build-handler)
+        changed (atom false)
+        subj (subscribe (from-basic-event (:append handler))
+                        (fn [e] (reset! changed e)))]
+    (is (not @changed))
+    ((:event handler) :foo)
+    (is (= :foo @changed))
+    ((:event handler) :bar)
+    (is (= :bar @changed))))
 
 (deftest multiple-subscribers-test
-  (def changed-first false)
-  (def changed-second false)
-  (def o (from-basic-event append-handler))
-  (subscribe o (fn [e] (def changed-first e)))
-  (subscribe o (fn [e] (def changed-second e)))
-  (is (not changed-first))
-  (is (not changed-second))
-  (basic-handler :foo)
-  (is (= :foo changed-first))
-  (is (= :foo changed-second))
-  (basic-handler :bar)
-  (is (= :bar changed-first))
-  (is (= :bar changed-second)))
+  (let [handler (build-handler)
+        changed-first (atom false)
+        changed-second (atom false)
+        o (from-basic-event (:append handler))]
+    (subscribe o (fn [e] (reset! changed-first e)))
+    (subscribe o (fn [e] (reset! changed-second e)))
+    (is (not @changed-first))
+    (is (not @changed-second))
+    (dosync
+      ((:event handler) :foo)
+      (is (= :foo @changed-first))
+      (is (= :foo @changed-second))
+      ((:event handler) :bar)
+      (is (= :bar @changed-first))
+      (is (= :bar @changed-second)))))
 
 (deftest filter-test
-  (def changed false)
-  (def filtered (myfilter (from-basic-event append-handler)
-                                   (fn [e] (= e :foo))))
-  (subscribe filtered (fn [e] (def changed e)))
-  (is (not changed))
-  (basic-handler :foo)
-  (is (= :foo changed))
-  (basic-handler :bar)
-  (is (= :foo changed)))
+  (let [handler (build-handler)
+        changed (atom false)
+        filtered (filter* (from-basic-event (:append handler))
+                          (fn [e] (= e :foo)))]
+    (subscribe filtered (fn [e] (reset! changed e)))
+    (dosync
+      (is (not @changed))
+      ((:event handler) :foo)
+      (is (= :foo @changed))
+      ((:event handler) :bar)
+      (is (= :foo @changed)))))
 
 (deftest filter-with-mult-subscribers-test
-  (def changed-first false)
-  (def changed-second false)
-  (def calls 0)
-  (def filtered (myfilter (from-basic-event append-handler)
-                                   (fn [e]
-                                     (def calls (inc calls))
-                                     (= e :foo))))
-  (subscribe filtered (fn [e] (def changed-first e)))
-  (subscribe filtered (fn [e] (def changed-second e)))
-  (is (not changed-first))
-  (is (not changed-second))
-  (is (= 0 calls))
-  (basic-handler :foo)
-  (is (= :foo changed-first))
-  (is (= :foo changed-second))
-  ; maybe do this in the future
-  ;(is (= 1 calls))
-  (basic-handler :bar)
-  (is (= :bar changed-first))
-  (is (= :bar changed-second))
-  ; maybe do this in the future
-  ;(is (= 2 calls))
-  )
+  (let [handler (build-handler)
+        changed (atom false)
+        changed-first (atom false)
+        changed-second (atom false)
+        calls (atom 0)
+        filtered (filter* (from-basic-event (:append handler))
+                          (fn [e]
+                            (swap! calls inc)
+                            (= e :foo)))]
+    (subscribe filtered (fn [e] (reset! changed-first e)))
+    (subscribe filtered (fn [e] (reset! changed-second e)))
+    (is (not @changed-first))
+    (is (not @changed-second))
+    (is (= 0 @calls))
+    (dosync
+      ((:event handler) :foo)
+      (is (= :foo @changed-first))
+      (is (= :foo @changed-second))
+      ; maybe do this in the future
+      ;(is (= 1 @calls))
+      ((:event handler) :bar)
+      (is (= :foo @changed-first))
+      (is (= :foo @changed-second)))
+      ; maybe do this in the future
+      ;(is (= 2 @calls))
+    ))
 
 (deftest filter-some-test
-  (def changed-first false)
-  (def changed-second false)
-  (def calls 0)
-  (def orig (from-basic-event append-handler))
-  (def filtered (myfilter orig
+  (let [handler (build-handler)
+        changed (atom false)
+        changed-first (atom false)
+        changed-second (atom false)
+        calls (atom 0)
+        orig (from-basic-event (:append handler))
+        filtered (filter* orig
                           (fn [e]
-                            (def calls (inc calls))
-                            (= e :foo))))
-  (subscribe filtered (fn [e] (def changed-first e)))
-  (subscribe orig (fn [e] (def changed-second e)))
-  (is (not changed-first))
-  (is (not changed-second))
-  (is (= 0 calls))
-  (basic-handler :foo)
-  (is (= :foo changed-first))
-  (is (= :foo changed-second))
-  (is (= 1 calls))
-  (basic-handler :bar)
-  (is (= :foo changed-first))
-  (is (= :bar changed-second)))
+                            (swap! calls inc)
+                            (= e :foo)))]
+    (subscribe filtered (fn [e] (reset! changed-first e)))
+    (subscribe orig (fn [e] (reset! changed-second e)))
+    (is (not @changed-first))
+    (is (not @changed-second))
+    (is (= 0 @calls))
+    (dosync
+      ((:event handler) :foo)
+      (is (= :foo @changed-first))
+      (is (= :foo @changed-second))
+      (is (= 1 @calls))
+      ((:event handler) :bar)
+      (is (= :foo @changed-first))
+      (is (= :bar @changed-second)))))
 
+(deftest sleep-test
+  (let [handler (build-handler)
+        calls (atom [])
+        o (from-basic-event (:append handler))
+        delayed (sleep o 10)]
+    (subscribe delayed (fn [x] (swap! calls #(conj % x))))
+    ((:event handler) :foo)
+    (is (= [] @calls))
+    (Thread/sleep 15)
+    (is (= [:foo] @calls))))
