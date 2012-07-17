@@ -106,3 +106,30 @@
     (is (= [] @calls))
     (Thread/sleep 15)
     (is (= [:foo] @calls))))
+
+(deftest many-sleeps-test
+  (let [handler (build-handler)
+        calls (atom [])
+        o (from-basic-event (:append handler))
+        long-delay (sleep o 600)
+        short-delay (sleep o 300)
+        appended-delay (sleep short-delay 200)]
+
+    (subscribe o (fn [x] (swap! calls #(conj % [:instant x]))))
+    (subscribe long-delay (fn [x] (swap! calls #(conj % [:long x]))))
+    (subscribe short-delay (fn [x] (swap! calls #(conj % [:short x]))))
+    (subscribe appended-delay (fn [x] (swap! calls #(conj % [:appended x]))))
+
+    ((:event handler) :foo)
+    ; :instant is called
+    (Thread/sleep 100)
+    (is (= [:instant] (map first @calls)))
+    ; :short is called
+    (Thread/sleep 300)
+    (is (= [:instant :short] (map first @calls)))
+    ; :long is called
+    (Thread/sleep 300)
+    (is (= [:instant :short :long] (map first @calls)))
+    ; :appended is called
+    (Thread/sleep 200)
+    (is (= [:instant :short :long :appended] (map first @calls)))))

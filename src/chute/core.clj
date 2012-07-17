@@ -103,12 +103,15 @@
 ; append-handler :: handler -> ()
 
 ; from-basic-event :: appender -> M appender
-(defn from-basic-event [appender] (result appender))
+(defn from-basic-event [appender]
+  (result appender))
 
 ; subscribe :: M appender -> handler -> ()
 ; must call (appender handler)
 (defn subscribe [m handler]
-  ((bind m (fn [appender] (result (appender handler)))) identity))
+  ((bind m (fn [appender]
+             (result (appender handler))))
+     identity))
 
 ; fiter :: M appender<a> -> predicate -> M appender<b>
 ; fiter :: M (handler -> ()) -> predicate -> M (handler-with-pred -> ())
@@ -130,6 +133,7 @@
             (result (fn [handler]
                       (appender (fn [e]
                                   (set-timeout #(handler e) amount))))))))
+
 ;(def o (from-basic-event append-handler))
 ;(subscribe o #(println "subscribed " %))
 ;(@basic-handler :foo)
