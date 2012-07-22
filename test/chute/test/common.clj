@@ -1,5 +1,5 @@
-(ns chute.test.core
-  (:use [chute.core])
+(ns chute.test.common
+  (:use [chute.common])
   (:use [clojure.test]))
 
 (deftest subscribe-test
@@ -96,6 +96,7 @@
       (is (= :foo @changed-first))
       (is (= :bar @changed-second)))))
 
+; FIXME: this fails sometimes
 (deftest sleep-test
   (let [handler (build-handler)
         calls (atom [])
