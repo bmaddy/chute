@@ -1,6 +1,6 @@
 (ns chute.test.core
     (:use [chute.core :only [core-func using-common]]
-          [chute.foo :only [common-func]]))
+          [chute.crossover.foo :only [common-func]]))
 
 (defn run []
     (assert (= (+ 2 2) 4))

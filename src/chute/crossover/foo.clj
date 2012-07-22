@@ -1,4 +1,4 @@
-(ns chute.foo
+(ns chute.crossover.foo
   )
 
 (defn common-func []

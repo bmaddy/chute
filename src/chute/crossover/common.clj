@@ -1,4 +1,4 @@
-(ns chute.common
+(ns chute.crossover.common
   (:use [clojure.algo.monads])
   )
 

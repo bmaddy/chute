@@ -1,5 +1,5 @@
 (ns chute.core
-  (:use [chute.foo :only [common-func]])
+  (:use [chute.crossover.foo :only [common-func]])
   )
 
 (js/alert "Hello from ClojureScript!")
