@@ -1,6 +1,8 @@
 (ns chute.test.core
     (:use [chute.core :only [core-func using-common]]
-          [chute.crossover.foo :only [common-func]]))
+          [chute.crossover.foo :only [common-func]]
+          ;[clojure.algo.monads :only [with-monad cont-m m-bind m-result]]
+          ))
 
 (defn run []
     (assert (= (+ 2 2) 4))

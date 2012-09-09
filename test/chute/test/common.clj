@@ -96,7 +96,7 @@
       (is (= :foo @changed-first))
       (is (= :bar @changed-second)))))
 
-; FIXME: this fails sometimes
+; FIXME: this fails sometimes, use a promise in the handler and then see that everything took an appropriate amount of time perhaps?
 (deftest sleep-test
   (let [handler (build-handler)
         calls (atom [])
