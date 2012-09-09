@@ -1,5 +1,4 @@
-(ns chute.core
-  (:use [clojure.algo.monads]))
+(ns chute.core)
 
 ;(defprotocol Observable
 ;  (subscribe [observer]))
@@ -64,8 +63,15 @@
 ;
 ; delay :: Observable<T> -> TimeSpan -> ???
 
-(def bind (with-monad cont-m m-bind))
-(def result (with-monad cont-m m-result))
+(defn bind
+  "continuation monad - bind"
+  [mv f]
+  (fn [c]
+    (mv (fn [v] ((f v) c)))))
+(defn result
+  "continuation monad - result"
+  [v]
+  (fn [c] (c v)))
 
 ; this is the function that would be assigned to something like onclick
 (def basic-handler (atom identity))
